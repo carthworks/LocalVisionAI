@@ -66,6 +66,21 @@ export class OllamaClient {
     }
 
     /**
+     * Strip data URL prefix from base64 string
+     * Ollama expects raw base64 without the data:image/...;base64, prefix
+     */
+    private stripDataUrlPrefix(base64String: string): string {
+        // If it's a data URL, extract just the base64 part
+        if (base64String.startsWith('data:')) {
+            const base64Index = base64String.indexOf('base64,');
+            if (base64Index !== -1) {
+                return base64String.substring(base64Index + 7); // Skip 'base64,'
+            }
+        }
+        return base64String;
+    }
+
+    /**
      * Generate analysis from image
      */
     async analyzeImage(
@@ -76,10 +91,13 @@ export class OllamaClient {
         const startTime = performance.now();
 
         try {
+            // Strip data URL prefix if present
+            const cleanBase64 = this.stripDataUrlPrefix(imageBase64);
+
             const request: OllamaGenerateRequest = {
                 model,
                 prompt,
-                images: [imageBase64],
+                images: [cleanBase64],
                 stream: false,
                 options: {
                     temperature: 0.7,
@@ -168,10 +186,13 @@ export class OllamaClient {
         prompt: string = 'Describe what you see in this image in detail.'
     ): AsyncGenerator<string, void, unknown> {
         try {
+            // Strip data URL prefix if present
+            const cleanBase64 = this.stripDataUrlPrefix(imageBase64);
+
             const request: OllamaGenerateRequest = {
                 model,
                 prompt,
-                images: [imageBase64],
+                images: [cleanBase64],
                 stream: true,
                 options: {
                     temperature: 0.7,
