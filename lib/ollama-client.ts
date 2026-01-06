@@ -20,14 +20,23 @@ export class OllamaClient {
 
     /**
      * Check if Ollama is running
+     * Silently returns false if not available to avoid console spam
      */
     async isAvailable(): Promise<boolean> {
+        // Skip check in production/deployed environments
+        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            return false;
+        }
+
         try {
             const response = await fetch(`${this.baseUrl}/api/tags`, {
-                signal: AbortSignal.timeout(2000),
+                signal: AbortSignal.timeout(1000), // Reduced timeout
+                mode: 'cors',
+                cache: 'no-cache',
             });
             return response.ok;
         } catch {
+            // Silently fail - expected when Ollama is not running
             return false;
         }
     }

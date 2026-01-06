@@ -10,7 +10,7 @@ import SampleGallery from '@/components/SampleGallery';
 import Tooltip, { tooltipContent } from '@/components/Tooltip';
 import { useKeyboardShortcuts, KeyboardShortcutsHelp, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
 import { createInferenceManager } from '@/lib/inference-manager';
-import { detectOllama } from '@/lib/capabilities';
+import { detectOllamaCached } from '@/lib/capabilities';
 import type { AnalysisResult, AppConfig } from '@/lib/types';
 
 export default function DemoPage() {
@@ -54,7 +54,7 @@ export default function DemoPage() {
     // Detect Ollama availability on mount
     useEffect(() => {
         async function checkOllama() {
-            const available = await detectOllama();
+            const available = await detectOllamaCached();
             setOllamaAvailable(available);
 
             // If Ollama is not available and user has it selected, switch to browser mode

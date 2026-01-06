@@ -1,5 +1,6 @@
 // System Capabilities Detection
 import type { SystemCapabilities, InferencePipeline } from './types';
+export { detectOllamaCached, clearOllamaCache } from './ollama-cache';
 
 /**
  * Detects WebGPU availability
@@ -34,19 +35,30 @@ export function detectWebAssembly(): Promise<boolean> {
 
 /**
  * Checks if Ollama is running on localhost
+ * Silently returns false if Ollama is not available to avoid console spam
  */
 export async function detectOllama(): Promise<boolean> {
+    // Skip check in production/deployed environments
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        return false;
+    }
+
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const timeoutId = setTimeout(() => controller.abort(), 1000); // Reduced timeout
 
         const response = await fetch('http://localhost:11434/api/tags', {
             signal: controller.signal,
+            // Prevent browser from logging failed requests
+            mode: 'cors',
+            cache: 'no-cache',
         });
 
         clearTimeout(timeoutId);
         return response.ok;
     } catch (error) {
+        // Silently fail - this is expected when Ollama is not running
+        // Don't log to console to avoid spam
         return false;
     }
 }
