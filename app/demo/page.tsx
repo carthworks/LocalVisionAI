@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import VideoFeed from '@/components/VideoFeed';
 import AnalysisDisplay from '@/components/AnalysisDisplay';
 import PrivacyIndicator from '@/components/PrivacyIndicator';
@@ -10,6 +10,7 @@ import SampleGallery from '@/components/SampleGallery';
 import Tooltip, { tooltipContent } from '@/components/Tooltip';
 import { useKeyboardShortcuts, KeyboardShortcutsHelp, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
 import { createInferenceManager } from '@/lib/inference-manager';
+import { detectOllama } from '@/lib/capabilities';
 import type { AnalysisResult, AppConfig } from '@/lib/types';
 
 export default function DemoPage() {
@@ -20,6 +21,7 @@ export default function DemoPage() {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [performanceOpen, setPerformanceOpen] = useState(false);
     const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
+    const [ollamaAvailable, setOllamaAvailable] = useState(false);
     const captureButtonRef = useRef<HTMLButtonElement>(null);
 
     // App configuration
@@ -48,6 +50,26 @@ export default function DemoPage() {
             frameBufferSize: 1,
         },
     });
+
+    // Detect Ollama availability on mount
+    useEffect(() => {
+        async function checkOllama() {
+            const available = await detectOllama();
+            setOllamaAvailable(available);
+
+            // If Ollama is not available and user has it selected, switch to browser mode
+            if (!available && config.inference.pipeline === 'ollama') {
+                setConfig(prev => ({
+                    ...prev,
+                    inference: {
+                        ...prev.inference,
+                        pipeline: 'browser',
+                    },
+                }));
+            }
+        }
+        checkOllama();
+    }, []);
 
     const handleFrameCapture = async (frameBase64: string) => {
         setProcessing(true);
@@ -322,6 +344,7 @@ export default function DemoPage() {
                 onConfigChange={(newConfig: AppConfig) => {
                     setConfig(newConfig);
                 }}
+                ollamaAvailable={ollamaAvailable}
             />
 
             {/* Performance Monitor */}

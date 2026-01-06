@@ -9,6 +9,7 @@ interface SettingsPanelProps {
     config: AppConfig;
     onConfigChange: (config: AppConfig) => void;
     availableModels?: string[];
+    ollamaAvailable?: boolean;
 }
 
 export default function SettingsPanel({
@@ -17,6 +18,7 @@ export default function SettingsPanel({
     config,
     onConfigChange,
     availableModels = ['llava:latest', 'bakllava:latest'],
+    ollamaAvailable = false,
 }: SettingsPanelProps) {
     const [localConfig, setLocalConfig] = useState<AppConfig>(config);
     const [hasChanges, setHasChanges] = useState(false);
@@ -103,14 +105,25 @@ export default function SettingsPanel({
                                     onChange={(e) => handleChange('inference', 'pipeline', e.target.value as InferencePipeline)}
                                     className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="ollama">Ollama (Recommended)</option>
+                                    <option value="ollama" disabled={!ollamaAvailable}>
+                                        Ollama {ollamaAvailable ? '(Recommended)' : '(Not Available)'}
+                                    </option>
                                     <option value="browser">In-Browser</option>
                                 </select>
                                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                     {localConfig.inference.pipeline === 'ollama'
-                                        ? 'Faster, requires Ollama installation'
+                                        ? ollamaAvailable
+                                            ? 'Faster, requires Ollama installation'
+                                            : '⚠️ Ollama is not running. Please start Ollama or switch to In-Browser mode.'
                                         : 'Slower, no installation needed'}
                                 </p>
+                                {!ollamaAvailable && localConfig.inference.pipeline === 'ollama' && (
+                                    <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                                        <p className="text-xs text-amber-800 dark:text-amber-200">
+                                            <strong>Note:</strong> Ollama is not detected. The system will automatically fall back to In-Browser mode when you capture a frame.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Model Selection (Ollama only) */}
